@@ -1,7 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, Calendar, Clock, User, Mail, Phone, ShieldCheck, Check, Sparkles } from 'lucide-react';
+import {
+  X,
+  CheckCircle2,
+  Clock,
+  User,
+  Mail,
+  Phone,
+  ShieldCheck,
+  Check,
+  Sparkles,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LotusIcon } from './icons/LotusIcon';
 
@@ -20,7 +33,10 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ fullName?: string; email?: string }>({});
   const [bookingRef, setBookingRef] = useState('');
 
   // Sync state with preselectedClass prop during render (React 19 pattern)
@@ -66,16 +82,78 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
 
   const timeSlots = ['07:30 AM', '09:00 AM', '12:00 PM', '05:30 PM', '07:00 PM'];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !email) return;
-    const ref = `YH-${Math.floor(100000 + Math.random() * 900000)}`;
-    setBookingRef(ref);
-    setIsSubmitted(true);
+    if (isSubmitting) return;
+
+    setErrorMessage(null);
+
+    // Validation
+    const errors: { fullName?: string; email?: string } = {};
+    const trimmedName = fullName.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName || trimmedName.length < 2) {
+      errors.fullName = 'Please enter your full name (at least 2 characters).';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      errors.email = 'Please enter a valid email address.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          practice: selectedClass,
+          day: selectedDate,
+          time: selectedTime,
+          fullName: trimmedName,
+          email: trimmedEmail,
+          experienceLevel: level,
+          phone: phone.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setErrorMessage(
+          data.message || 'Unable to save your booking right now. Please try again.'
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      setBookingRef(data.bookingRef || `YH-${Math.floor(100000 + Math.random() * 900000)}`);
+      setIsSubmitted(true);
+    } catch (err: unknown) {
+      const errorText =
+        err instanceof Error
+          ? err.message
+          : 'Network error occurred while submitting your booking. Please try again.';
+      setErrorMessage(errorText);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
     setIsSubmitted(false);
+    setErrorMessage(null);
+    setFieldErrors({});
     setFullName('');
     setEmail('');
     setPhone('');
@@ -118,11 +196,11 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
                 COMPLIMENTARY FIRST VISIT CONFIRMED
               </span>
               <h3 className="font-serif text-3xl sm:text-4xl text-[#1E1C1A] font-normal mb-3">
-                Welcome to Yoga Harmony
+                Your slot has been booked successfully!
               </h3>
 
               <p className="text-sm text-[#554F47] max-w-md mx-auto mb-6 leading-relaxed font-light">
-                Your reservation has been confirmed. A studio welcome package and preparation guide has been dispatched to{' '}
+                Your booking information has been registered and synced with our studio roster. A welcome package and preparation guide has been dispatched to{' '}
                 <strong className="font-medium text-[#1E1C1A]">{email}</strong>.
               </p>
 
@@ -145,6 +223,13 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
                 <div className="flex justify-between items-center border-b border-[#E8E1D5] pb-2">
                   <span className="text-[#7A7165]">Experience Level:</span>
                   <span className="font-medium text-[#1E1C1A]">{level}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-[#E8E1D5] pb-2">
+                  <span className="text-[#7A7165]">Status:</span>
+                  <span className="font-medium text-[#55624E] flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#55624E]" />
+                    Confirmed (Synced with Google Sheet)
+                  </span>
                 </div>
                 <div className="flex justify-between items-center pt-1">
                   <span className="text-[#7A7165]">Reservation Pass:</span>
@@ -171,9 +256,30 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
               <h3 id="booking-form-title" className="font-serif text-2xl sm:text-3xl text-[#1E1C1A] font-normal mb-1.5">
                 Book Your First Class
               </h3>
-              <p className="text-xs text-[#7A7165] mb-6 font-light leading-relaxed">
+              <p className="text-xs text-[#7A7165] mb-5 font-light leading-relaxed">
                 Step into a serene space. Organic herbal tea, mats, and bolsters are warmly provided.
               </p>
+
+              {/* Error banner if submission failed */}
+              {errorMessage && (
+                <div className="mb-5 p-3.5 rounded-xl bg-[#FDF2F2] border border-[#F6D0D0] text-[#9E2A2B] text-xs flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold">Booking could not be recorded</p>
+                    <p className="mt-0.5 text-[11px] text-[#A83232] font-light leading-relaxed">
+                      {errorMessage}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setErrorMessage(null)}
+                    className="text-[#9E2A2B] hover:text-[#501314] cursor-pointer p-0.5"
+                    aria-label="Dismiss error"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* 1. Practice Selection */}
@@ -188,12 +294,13 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
                         <button
                           type="button"
                           key={cls.name}
+                          disabled={isSubmitting}
                           onClick={() => setSelectedClass(cls.name)}
                           className={`p-3 text-left rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                             isSelected
                               ? 'bg-[#23201D] text-[#FAF8F5] border-[#23201D] shadow-xs'
                               : 'bg-[#FDFCFB] text-[#554F47] border-[#ECE5DA] hover:bg-[#F6F2EA]'
-                          }`}
+                          } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
                           <div>
                             <span className="block text-xs font-medium">{cls.name}</span>
@@ -224,12 +331,13 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
                         <button
                           type="button"
                           key={d.label}
+                          disabled={isSubmitting}
                           onClick={() => setSelectedDate(d.label)}
                           className={`p-2 sm:p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
                             isSelected
                               ? 'bg-[#23201D] text-[#FAF8F5] border-[#23201D] shadow-xs'
                               : 'bg-[#FDFCFB] text-[#554F47] border-[#ECE5DA] hover:bg-[#F6F2EA]'
-                          }`}
+                          } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
                           <span className="block text-[10px] uppercase font-mono opacity-75">{d.day}</span>
                           <span className="block text-xs font-semibold my-0.5">{d.date}</span>
@@ -252,12 +360,13 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
                         <button
                           type="button"
                           key={time}
+                          disabled={isSubmitting}
                           onClick={() => setSelectedTime(time)}
                           className={`px-3.5 py-1.5 text-xs rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
                             isSelected
                               ? 'bg-[#55624E] text-[#FAF8F5] border-[#55624E] shadow-2xs'
                               : 'bg-[#FAF8F5] text-[#554F47] border-[#DDD5C8] hover:border-[#8C8275]'
-                          }`}
+                          } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
                           <Clock className="w-3 h-3 opacity-70" />
                           <span>{time}</span>
@@ -272,7 +381,7 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
                   <label className="block text-[11px] uppercase tracking-[0.16em] text-[#696259] font-medium mb-3">
                     4. Your Information
                   </label>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                     <div>
                       <div className="relative">
@@ -280,12 +389,25 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
                         <input
                           type="text"
                           required
+                          disabled={isSubmitting}
                           value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
+                          onChange={(e) => {
+                            setFullName(e.target.value);
+                            if (fieldErrors.fullName) {
+                              setFieldErrors((prev) => ({ ...prev, fullName: undefined }));
+                            }
+                          }}
                           placeholder="Your Full Name *"
-                          className="w-full pl-10 pr-3.5 py-2.5 bg-[#FDFCFB] border border-[#DDD5C8] rounded-xl text-sm focus:outline-none focus:border-[#23201D] text-[#1E1C1A]"
+                          className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FDFCFB] border rounded-xl text-sm focus:outline-none focus:border-[#23201D] text-[#1E1C1A] ${
+                            fieldErrors.fullName ? 'border-[#E05252] bg-[#FFF8F8]' : 'border-[#DDD5C8]'
+                          } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                         />
                       </div>
+                      {fieldErrors.fullName && (
+                        <p className="text-[11px] text-[#E05252] mt-1 ml-1 font-light">
+                          {fieldErrors.fullName}
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -294,12 +416,25 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
                         <input
                           type="email"
                           required
+                          disabled={isSubmitting}
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (fieldErrors.email) {
+                              setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                            }
+                          }}
                           placeholder="Email Address *"
-                          className="w-full pl-10 pr-3.5 py-2.5 bg-[#FDFCFB] border border-[#DDD5C8] rounded-xl text-sm focus:outline-none focus:border-[#23201D] text-[#1E1C1A]"
+                          className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FDFCFB] border rounded-xl text-sm focus:outline-none focus:border-[#23201D] text-[#1E1C1A] ${
+                            fieldErrors.email ? 'border-[#E05252] bg-[#FFF8F8]' : 'border-[#DDD5C8]'
+                          } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                         />
                       </div>
+                      {fieldErrors.email && (
+                        <p className="text-[11px] text-[#E05252] mt-1 ml-1 font-light">
+                          {fieldErrors.email}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -308,10 +443,13 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
                       <Phone className="w-4 h-4 text-[#8C8275] absolute left-3.5 top-1/2 -translate-y-1/2 stroke-[1.5]" />
                       <input
                         type="tel"
+                        disabled={isSubmitting}
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="Mobile Number (optional, for SMS class reminders)"
-                        className="w-full pl-10 pr-3.5 py-2.5 bg-[#FDFCFB] border border-[#DDD5C8] rounded-xl text-sm focus:outline-none focus:border-[#23201D] text-[#1E1C1A]"
+                        className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FDFCFB] border border-[#DDD5C8] rounded-xl text-sm focus:outline-none focus:border-[#23201D] text-[#1E1C1A] ${
+                          isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+                        }`}
                       />
                     </div>
                   </div>
@@ -327,12 +465,13 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
                       <button
                         type="button"
                         key={lvl}
+                        disabled={isSubmitting}
                         onClick={() => setLevel(lvl)}
                         className={`py-2 px-2 text-center rounded-xl border transition-all cursor-pointer ${
                           level === lvl
                             ? 'border-[#23201D] bg-[#F1EDE5] text-[#1E1C1A] font-medium'
                             : 'border-[#ECE5DA] bg-[#FDFCFB] text-[#7A7165]'
-                        }`}
+                        } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                       >
                         {lvl}
                       </button>
@@ -344,10 +483,20 @@ export function BookingModal({ isOpen, onClose, preselectedClass }: BookingModal
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full py-3.5 text-xs uppercase tracking-[0.2em] font-medium bg-[#23201D] text-[#FAF8F5] rounded-full hover:bg-[#3D3833] transition-all duration-300 shadow-[0_4px_16px_rgba(35,32,29,0.1)] cursor-pointer flex items-center justify-center gap-2"
+                    disabled={isSubmitting}
+                    className="w-full py-3.5 text-xs uppercase tracking-[0.2em] font-medium bg-[#23201D] text-[#FAF8F5] rounded-full hover:bg-[#3D3833] transition-all duration-300 shadow-[0_4px_16px_rgba(35,32,29,0.1)] cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-[#E6DFD3]" />
-                    <span>Confirm Free First Class Reservation</span>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 text-[#E6DFD3] animate-spin" />
+                        <span>Reserving Slot & Syncing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-[#E6DFD3]" />
+                        <span>Confirm Free First Class Reservation</span>
+                      </>
+                    )}
                   </button>
 
                   <div className="flex items-center justify-center gap-1.5 mt-3 text-[11px] text-[#7A7165] font-light">

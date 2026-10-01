@@ -13,6 +13,7 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
   const [isFinished, setIsFinished] = useState(false);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
     const startTime = performance.now();
     const duration = 1200; // 1.2s smooth loading
 
@@ -24,7 +25,7 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
       if (pct < 100) {
         requestAnimationFrame(updateProgress);
       } else {
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
           setIsFinished(true);
           onComplete?.();
         }, 300);
@@ -32,7 +33,10 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
     };
 
     const animId = requestAnimationFrame(updateProgress);
-    return () => cancelAnimationFrame(animId);
+    return () => {
+      cancelAnimationFrame(animId);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [onComplete]);
 
   return (
