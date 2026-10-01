@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { X, ZoomIn } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ScrollReveal } from './ScrollReveal';
 
 interface GalleryItem {
   id: string;
@@ -88,45 +90,56 @@ export function Gallery() {
       <div className="max-w-7xl mx-auto px-6 sm:px-10">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-14 sm:mb-16">
-          <span className="text-[11px] uppercase tracking-[0.28em] text-[#7A7165] font-semibold mb-3 block">
-            VISUAL SANCTUARY
-          </span>
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#1E1C1A] font-normal mb-4">
-            Moments in Stillness
-          </h2>
-          <p className="text-[15px] sm:text-base text-[#615B52] font-light">
-            Glimpses into our community, retreats, breathing spaces, and mindful practices.
-          </p>
+          <ScrollReveal direction="up">
+            <span className="text-[11px] uppercase tracking-[0.28em] text-[#7A7165] font-semibold mb-3 block">
+              VISUAL SANCTUARY
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#1E1C1A] font-normal mb-4 tracking-tight">
+              Moments in Stillness
+            </h2>
+            <p className="text-[15px] sm:text-base text-[#615B52] font-light">
+              Glimpses into our community, retreats, breathing spaces, and mindful practices.
+            </p>
+          </ScrollReveal>
         </div>
 
         {/* Minimalist Editorial Tabs */}
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-14 border-b border-[#ECE5DA] pb-4">
-          {CATEGORIES.map((cat) => {
-            const isActive = activeCategory === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`pb-2 text-[12px] uppercase tracking-[0.16em] transition-all cursor-pointer whitespace-nowrap relative ${
-                  isActive
-                    ? 'text-[#1E1C1A] font-medium'
-                    : 'text-[#7A7165] hover:text-[#1E1C1A] font-light'
-                }`}
-              >
-                {cat}
-                {isActive && (
-                  <span className="absolute -bottom-4 left-0 right-0 h-[1.5px] bg-[#1E1C1A] rounded-full" />
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <ScrollReveal direction="up" delay={0.1}>
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-7 mb-14 border-b border-[#ECE5DA] pb-4">
+            {CATEGORIES.map((cat) => {
+              const isActive = activeCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`pb-2 text-[12px] uppercase tracking-[0.16em] transition-all cursor-pointer whitespace-nowrap relative ${
+                    isActive
+                      ? 'text-[#1E1C1A] font-medium'
+                      : 'text-[#7A7165] hover:text-[#1E1C1A] font-light'
+                  }`}
+                >
+                  {cat}
+                  {isActive && (
+                    <motion.span
+                      layoutId="activeCategoryIndicator"
+                      className="absolute -bottom-4 left-0 right-0 h-[1.5px] bg-[#1E1C1A] rounded-full"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </ScrollReveal>
 
         {/* Masonry / Responsive Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7 sm:gap-8">
-          {filteredItems.map((item) => (
-            <div
+          {filteredItems.map((item, idx) => (
+            <motion.div
               key={item.id}
+              initial={{ opacity: 0, scale: 0.96 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.6, delay: (idx % 3) * 0.1 }}
               onClick={() => setSelectedPhoto(item)}
               className="group relative rounded-2xl overflow-hidden cursor-pointer border border-[#ECE5DB] bg-[#F2EDE4] shadow-[0_4px_20px_rgba(40,36,30,0.02)] aspect-[4/3] transition-all duration-500 hover:shadow-[0_8px_30px_rgba(40,36,30,0.06)] hover:border-[#D5CDBD]"
             >
@@ -136,7 +149,7 @@ export function Gallery() {
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 referrerPolicy="no-referrer"
-                className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-104"
+                className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
               />
 
               {/* Hover Overlay with Category Name and Title */}
@@ -152,59 +165,64 @@ export function Gallery() {
                   <ZoomIn className="w-4 h-4 text-[#FAF8F5] stroke-[1.5]" />
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
 
-      {/* Lightbox Modal */}
-      {selectedPhoto && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
-          onClick={() => setSelectedPhoto(null)}
-        >
+      {/* Lightbox Modal with AnimatePresence */}
+      <AnimatePresence>
+        {selectedPhoto && (
           <div
-            className="relative max-w-4xl w-full bg-[#FAF8F5] rounded-3xl overflow-hidden shadow-2xl border border-[#E5DDD0]"
-            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+            onClick={() => setSelectedPhoto(null)}
           >
-            <button
-              onClick={() => setSelectedPhoto(null)}
-              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/85 hover:bg-white text-[#1E1C1A] flex items-center justify-center transition-colors shadow-xs"
-              aria-label="Close photo preview"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.25 }}
+              className="relative max-w-4xl w-full bg-[#FAF8F5] rounded-3xl overflow-hidden shadow-2xl border border-[#E5DDD0]"
+              onClick={(e) => e.stopPropagation()}
             >
-              <X className="w-4 h-4 stroke-[1.5]" />
-            </button>
+              <button
+                onClick={() => setSelectedPhoto(null)}
+                className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/85 hover:bg-white text-[#1E1C1A] flex items-center justify-center transition-colors shadow-xs cursor-pointer"
+                aria-label="Close photo preview"
+              >
+                <X className="w-4 h-4 stroke-[1.5]" />
+              </button>
 
-            <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full bg-[#1A1918]">
-              <Image
-                src={selectedPhoto.image}
-                alt={selectedPhoto.title}
-                fill
-                priority
-                referrerPolicy="no-referrer"
-                className="object-contain"
-              />
-            </div>
-
-            <div className="p-6 bg-[#FAF8F5] flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-[#ECE5DA]">
-              <div>
-                <span className="text-[10px] uppercase tracking-[0.22em] text-[#7A7165] font-medium block">
-                  {selectedPhoto.category}
-                </span>
-                <h3 className="font-serif text-xl sm:text-2xl text-[#1E1C1A] font-normal">
-                  {selectedPhoto.title}
-                </h3>
+              <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full bg-[#1A1918]">
+                <Image
+                  src={selectedPhoto.image}
+                  alt={selectedPhoto.title}
+                  fill
+                  priority
+                  referrerPolicy="no-referrer"
+                  className="object-contain"
+                />
               </div>
-              <span className="text-xs text-[#696259] font-mono">
-                {selectedPhoto.location}
-              </span>
-            </div>
+
+              <div className="p-6 bg-[#FAF8F5] flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-[#ECE5DA]">
+                <div>
+                  <span className="text-[10px] uppercase tracking-[0.22em] text-[#7A7165] font-medium block">
+                    {selectedPhoto.category}
+                  </span>
+                  <h3 className="font-serif text-xl sm:text-2xl text-[#1E1C1A] font-normal">
+                    {selectedPhoto.title}
+                  </h3>
+                </div>
+                <span className="text-xs text-[#696259] font-mono">
+                  {selectedPhoto.location}
+                </span>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </section>
   );
 }
-

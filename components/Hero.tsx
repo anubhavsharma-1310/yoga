@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ArrowRight } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface HeroProps {
   onExploreClasses: () => void;
@@ -13,7 +14,7 @@ export function Hero({ onExploreClasses, onStartJourney }: HeroProps) {
   return (
     <section
       id="home"
-      className="relative min-h-[88vh] lg:min-h-[92vh] flex items-center justify-center overflow-hidden pt-28 pb-20 sm:pt-32 sm:pb-24"
+      className="relative min-h-[90vh] lg:min-h-[94vh] flex items-center justify-center overflow-hidden pt-28 pb-20 sm:pt-32 sm:pb-24"
     >
       {/* Background Image with Warm Organic Linen / Travertine Scrim */}
       <div className="absolute inset-0 z-0">
@@ -31,29 +32,49 @@ export function Hero({ onExploreClasses, onStartJourney }: HeroProps) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(247,244,238,0.75)_100%)] pointer-events-none" />
       </div>
 
-      {/* Hero Content */}
+      {/* Hero Content with Staggered Entrance Animations */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 sm:px-10 text-center flex flex-col items-center">
-        {/* Eyebrow */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FAF8F5]/85 border border-[#E4DDD0] mb-8 text-[11px] sm:text-xs uppercase tracking-[0.28em] text-[#7A7165] font-medium shadow-[0_2px_8px_rgba(40,36,30,0.02)]">
+        {/* Eyebrow Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FAF8F5]/85 border border-[#E4DDD0] mb-8 text-[11px] sm:text-xs uppercase tracking-[0.28em] text-[#7A7165] font-medium shadow-[0_2px_8px_rgba(40,36,30,0.02)]"
+        >
           <span className="w-1.5 h-1.5 rounded-full bg-[#7E8A79]" />
           <span>MINDFUL MOVEMENT · INNER BALANCE</span>
-        </div>
+        </motion.div>
 
         {/* Large Heading */}
-        <h1 className="font-serif text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[5.25rem] leading-[1.06] tracking-[-0.015em] text-[#1E1C1A] mb-7 font-normal">
+        <motion.h1
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.85, delay: 0.35, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="font-serif text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[5.25rem] leading-[1.06] tracking-[-0.015em] text-[#1E1C1A] mb-7 font-normal"
+        >
           Find Your Balance.{' '}
           <span className="block italic text-[#48423B] font-light mt-1 sm:mt-2">
             Live Mindfully.
           </span>
-        </h1>
+        </motion.h1>
 
         {/* Supporting Text */}
-        <p className="max-w-xl text-[15px] sm:text-[17px] md:text-lg text-[#5A534B] font-light leading-relaxed mb-11">
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.85, delay: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="max-w-xl text-[15px] sm:text-[17px] md:text-lg text-[#5A534B] font-light leading-relaxed mb-11"
+        >
           Move with intention, breathe deeply, and create space for a healthier, calmer life.
-        </p>
+        </motion.p>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.85, delay: 0.65, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
+        >
           <button
             onClick={onExploreClasses}
             className="w-full sm:w-auto px-8 sm:px-9 py-3.5 text-xs uppercase tracking-[0.2em] font-medium bg-[#23201D] text-[#FAF8F5] rounded-full hover:bg-[#3D3833] transition-all duration-300 shadow-[0_4px_16px_rgba(35,32,29,0.08)] cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
@@ -62,15 +83,21 @@ export function Hero({ onExploreClasses, onStartJourney }: HeroProps) {
           </button>
           <button
             onClick={onStartJourney}
-            className="w-full sm:w-auto px-8 sm:px-9 py-3.5 text-xs uppercase tracking-[0.2em] font-medium bg-[#FAF8F5]/90 backdrop-blur-xs text-[#23201D] border border-[#D5CFC2] rounded-full hover:bg-white hover:border-[#BEB6A6] transition-all duration-300 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 shadow-[0_2px_8px_rgba(40,36,30,0.02)]"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 sm:px-9 py-3.5 text-xs uppercase tracking-[0.2em] font-medium bg-[#FAF8F5]/90 backdrop-blur-xs text-[#23201D] border border-[#D5CFC2] rounded-full hover:bg-white hover:border-[#BEB6A6] transition-all duration-300 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 shadow-[0_2px_8px_rgba(40,36,30,0.02)]"
           >
-            Start Your Journey
+            <span>Start Your Journey</span>
+            <ArrowRight className="w-3.5 h-3.5 opacity-70" />
           </button>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Subtle Scroll Indicator */}
-      <div className="absolute bottom-7 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 opacity-65 hover:opacity-100 transition-opacity">
+      {/* Scroll Indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.75 }}
+        transition={{ delay: 1, duration: 1 }}
+        className="absolute bottom-7 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 hover:opacity-100 transition-opacity"
+      >
         <span className="text-[10px] uppercase tracking-[0.25em] text-[#8C8275] font-light">
           Scroll
         </span>
@@ -81,8 +108,7 @@ export function Hero({ onExploreClasses, onStartJourney }: HeroProps) {
         >
           <ChevronDown className="w-4 h-4 stroke-[1.5]" />
         </a>
-      </div>
+      </motion.div>
     </section>
   );
 }
-

@@ -18,6 +18,7 @@ import { ContactModal } from '@/components/ContactModal';
 import { StoryModal } from '@/components/StoryModal';
 import { FaqModal } from '@/components/FaqModal';
 import { BackToTop } from '@/components/BackToTop';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 export default function Home() {
   const [bookingOpen, setBookingOpen] = useState(false);
@@ -51,6 +52,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#2D2A26] flex flex-col font-sans">
+      {/* Initial Sanctuary Loading Screen */}
+      <LoadingScreen />
+
       {/* 1. STICKY NAVBAR */}
       <Navbar onOpenBooking={() => handleOpenBooking()} />
 
